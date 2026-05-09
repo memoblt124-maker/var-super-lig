@@ -27,7 +27,7 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: inc }, { data: { user } }] = await Promise.all([
+  const [incResult, authResult] = await Promise.all([
     supabase
       .from("incidents")
       .select(`
@@ -45,6 +45,9 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
       .single(),
     supabase.auth.getUser(),
   ]);
+
+  const inc  = incResult.data;
+  const user = authResult.data?.user ?? null;
 
   if (!inc) notFound();
 
