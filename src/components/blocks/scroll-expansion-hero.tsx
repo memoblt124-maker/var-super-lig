@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, ReactNode } from 'react';
+import { useEffect, useRef, useState, ReactNode, useCallback } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
@@ -32,6 +32,8 @@ const ScrollExpandMedia = ({
   const [mediaFullyExpanded, setMediaFullyExpanded] = useState<boolean>(false);
   const [touchStartY, setTouchStartY] = useState<number>(0);
   const [isMobileState, setIsMobileState] = useState<boolean>(false);
+  const [muted, setMuted] = useState<boolean>(true);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const sectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -141,7 +143,7 @@ const ScrollExpandMedia = ({
       : mediaSrc.replace('watch?v=', 'embed/');
     const videoId = mediaSrc.split('v=')[1]?.split('&')[0] ?? '';
     const sep = base.includes('?') ? '&' : '?';
-    return `${base}${sep}autoplay=1&mute=0&loop=1&controls=0&showinfo=0&rel=0&disablekb=1&modestbranding=1&iv_load_policy=3&fs=0&vq=hd1080&hd=1&playlist=${videoId}`;
+    return `${base}${sep}autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&disablekb=1&modestbranding=1&iv_load_policy=3&fs=0&vq=hd1080&hd=1&enablejsapi=1&playlist=${videoId}`;
   })();
 
   return (
@@ -186,6 +188,7 @@ const ScrollExpandMedia = ({
                   mediaSrc.includes('youtube.com') ? (
                     <div className="relative w-full h-full pointer-events-none">
                       <iframe
+                        ref={iframeRef}
                         width="100%"
                         height="100%"
                         src={youtubeEmbedSrc}
@@ -194,7 +197,7 @@ const ScrollExpandMedia = ({
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
                       />
-                      {/* Blocks all clicks so pause/play/UI never shows */}
+                      {/* Blocks clicks so pause/play UI never shows */}
                       <div className="absolute inset-0 z-10" style={{ pointerEvents: 'all', cursor: 'default' }} />
                       <motion.div
                         className="absolute inset-0 bg-black/30 rounded-xl"
@@ -202,6 +205,20 @@ const ScrollExpandMedia = ({
                         animate={{ opacity: 0.5 - scrollProgress * 0.3 }}
                         transition={{ duration: 0.2 }}
                       />
+                      {/* Unmute button */}
+                      <button
+                        onClick={() => {
+                          const msg = muted
+                            ? '{"event":"command","func":"unMute","args":""}'
+                            : '{"event":"command","func":"mute","args":""}';
+                          iframeRef.current?.contentWindow?.postMessage(msg, '*');
+                          setMuted(!muted);
+                        }}
+                        className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 text-white text-xs font-semibold hover:bg-black/80 transition-all"
+                        style={{ pointerEvents: 'all' }}
+                      >
+                        {muted ? '🔇 Sesi Aç' : '🔊 Sesi Kapat'}
+                      </button>
                     </div>
                   ) : (
                     <div className="relative w-full h-full pointer-events-none">

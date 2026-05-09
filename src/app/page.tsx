@@ -70,7 +70,7 @@ export default async function HomePage() {
           mediaSrc="https://www.youtube.com/watch?v=wNl0Jbomm_g"
           bgImageSrc="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=1920&auto=format&fit=crop&q=80"
           title="VAR Adaleti"
-          date="2024–25 Sezonu"
+          date="2025–26 Sezonu"
           scrollToExpand="Genişletmek için kaydırın"
           textBlend
         >
