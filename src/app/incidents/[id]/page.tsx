@@ -1,6 +1,8 @@
 // @ts-nocheck
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { createHash } from "crypto";
 import { IFAB_RULES } from "@/lib/ifab-rules";
 import { TYPE_MAP } from "@/lib/incident-types";
 import { castVoteAction } from "../actions";
@@ -45,6 +47,11 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
 
   if (!inc) notFound();
 
+  // Detect if this visitor already voted (by hashed IP)
+  const hdrs = await headers();
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0].trim() ?? hdrs.get("x-real-ip") ?? "unknown";
+  const voterId = createHash("sha256").update(ip).digest("hex");
+
   const team  = inc.teams as { name: string } | null;
   const ref   = inc.referees as { name: string } | null;
   const match = inc.matches as {
@@ -64,7 +71,8 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
   const rule   = IFAB_RULES[inc.type];
   const videoId = inc.video_url ? getYouTubeId(inc.video_url) : null;
 
-  const voteOpen = !inc.vote_closes_at || new Date(inc.vote_closes_at) > new Date();
+  const voteOpen   = !inc.vote_closes_at || new Date(inc.vote_closes_at) > new Date();
+  const myVote     = votes.find((v) => v.user_id === voterId)?.vote ?? null;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -223,9 +231,18 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
 
         {!voteOpen ? (
           <p className="text-xs text-gray-600">Oylama kapandı · {fanTotal} oy</p>
+        ) : myVote ? (
+          <div className="border-t border-gray-800 pt-4">
+            <p className="text-xs text-gray-500">
+              Oyunuz: <span className={`font-bold ${myVote === "correct" ? "text-green-400" : "text-red-400"}`}>
+                {myVote === "correct" ? "✓ Doğru Karar" : "✗ Hatalı Karar"}
+              </span>
+            </p>
+            <p className="text-xs text-gray-600 mt-1">Oy kullandınız — değiştirilemez · {fanTotal} toplam oy</p>
+          </div>
         ) : (
           <div className="border-t border-gray-800 pt-4 space-y-3">
-            <p className="text-xs text-gray-500">Bu karar doğru muydu?</p>
+            <p className="text-xs text-gray-500">Bu karar doğru muydu? (1 oy hakkınız var)</p>
             <div className="flex gap-2">
               <form action={castVoteAction}>
                 <input type="hidden" name="incident_id" value={inc.id} />
