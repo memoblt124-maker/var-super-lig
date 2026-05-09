@@ -141,7 +141,7 @@ const ScrollExpandMedia = ({
       : mediaSrc.replace('watch?v=', 'embed/');
     const videoId = mediaSrc.split('v=')[1]?.split('&')[0] ?? '';
     const sep = base.includes('?') ? '&' : '?';
-    return `${base}${sep}autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&disablekb=1&modestbranding=1&playlist=${videoId}`;
+    return `${base}${sep}autoplay=1&mute=0&loop=1&controls=0&showinfo=0&rel=0&disablekb=1&modestbranding=1&iv_load_policy=3&fs=0&vq=hd1080&hd=1&playlist=${videoId}`;
   })();
 
   return (
@@ -191,10 +191,11 @@ const ScrollExpandMedia = ({
                         src={youtubeEmbedSrc}
                         className="w-full h-full rounded-xl"
                         frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
                       />
-                      <div className="absolute inset-0 z-10 pointer-events-none" />
+                      {/* Blocks all clicks so pause/play/UI never shows */}
+                      <div className="absolute inset-0 z-10" style={{ pointerEvents: 'all', cursor: 'default' }} />
                       <motion.div
                         className="absolute inset-0 bg-black/30 rounded-xl"
                         initial={{ opacity: 0.7 }}
