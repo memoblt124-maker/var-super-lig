@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { TYPE_MAP } from "@/lib/incident-types";
 import IncidentFilters from "@/components/IncidentFilters";
+import { Component as EtheralShadow } from "@/components/ui/etheral-shadow";
 
 export const revalidate = 60;
 
@@ -25,10 +26,20 @@ function initials(name: string) {
   return name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
 }
 
+const BADGE_COLORS = [
+  "bg-red-900/60 text-red-300",
+  "bg-blue-900/60 text-blue-300",
+  "bg-yellow-900/60 text-yellow-300",
+  "bg-green-900/60 text-green-300",
+  "bg-purple-900/60 text-purple-300",
+  "bg-orange-900/60 text-orange-300",
+];
+
 function TeamBadge({ name, size = "md" }: { name: string; size?: "sm" | "md" }) {
   const sz = size === "sm" ? "w-7 h-7 text-[10px]" : "w-9 h-9 text-xs";
+  const color = BADGE_COLORS[name.charCodeAt(0) % BADGE_COLORS.length];
   return (
-    <div className={`${sz} rounded-full bg-gray-700 flex items-center justify-center font-bold text-gray-300 shrink-0`}>
+    <div className={`${sz} rounded-full ${color} flex items-center justify-center font-black shrink-0`}>
       {initials(name)}
     </div>
   );
@@ -42,7 +53,6 @@ export default async function IncidentsPage({
   const sp = await searchParams;
   const supabase = await createClient();
 
-  // ── fetch all data in parallel ───────────────────────────────────────────
   const [{ data: rawIncidents }, { data: teams }, { data: referees }, { data: allIncidents }] =
     await Promise.all([
       supabase
@@ -64,7 +74,7 @@ export default async function IncidentsPage({
 
   const incidents = (rawIncidents ?? []) as any[];
 
-  // ── stats ────────────────────────────────────────────────────────────────
+  // stats
   const pivByTeam: Record<string, { name: string; piv: number }> = {};
   for (const inc of allIncidents ?? []) {
     const tid = inc.team_affected_id;
@@ -91,7 +101,7 @@ export default async function IncidentsPage({
   const worstRef = refEntries[0] ?? null;
   const bestRef  = refEntries[refEntries.length - 1] ?? null;
 
-  // ── filter ───────────────────────────────────────────────────────────────
+  // filter
   const matchdays = [...new Set(incidents.flatMap((i) => i.matches?.matchday ? [i.matches.matchday] : []))].sort((a, b) => a - b);
 
   let filtered = incidents;
@@ -105,46 +115,62 @@ export default async function IncidentsPage({
   return (
     <div className="space-y-6">
 
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">VAR Olayları</h1>
-        <p className="mt-1 text-gray-400 text-sm">Tüm tartışmalı kararlar ve hakem hataları</p>
+      {/* Header with etheral shadow background */}
+      <div
+        className="relative rounded-2xl overflow-hidden"
+        style={{
+          marginLeft: "calc(50% - 50vw)",
+          marginRight: "calc(50% - 50vw)",
+          marginTop: "-2rem",
+          width: "100vw",
+          height: 220,
+        }}
+      >
+        <EtheralShadow
+          color="rgba(229, 62, 62, 0.6)"
+          animation={{ scale: 60, speed: 60 }}
+          noise={{ opacity: 0.4, scale: 1 }}
+        />
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20 px-4">
+          <h1 className="text-4xl font-black text-white">VAR Olayları</h1>
+          <p className="mt-2 text-white/60 text-sm">Tüm tartışmalı kararlar ve hakem hataları</p>
+        </div>
       </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {mostAffected && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 space-y-1">
-            <p className="text-xs text-red-400 font-semibold uppercase tracking-wide">En Çok Mağdur</p>
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 space-y-1">
+            <p className="text-[11px] text-red-400 font-semibold uppercase tracking-wide">En Çok Mağdur</p>
             <div className="flex items-center gap-2 mt-2">
               <TeamBadge name={mostAffected.name} size="sm" />
               <p className="text-white font-bold text-sm leading-tight">{mostAffected.name}</p>
             </div>
-            <p className="text-red-400 font-bold text-lg">+{mostAffected.piv.toFixed(1)} PIV</p>
+            <p className="text-red-400 font-black text-lg">+{mostAffected.piv.toFixed(1)}</p>
           </div>
         )}
         {leastAffected && leastAffected.name !== mostAffected?.name && (
-          <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4 space-y-1">
-            <p className="text-xs text-green-400 font-semibold uppercase tracking-wide">En Az Mağdur</p>
+          <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4 space-y-1">
+            <p className="text-[11px] text-green-400 font-semibold uppercase tracking-wide">En Az Mağdur</p>
             <div className="flex items-center gap-2 mt-2">
               <TeamBadge name={leastAffected.name} size="sm" />
               <p className="text-white font-bold text-sm leading-tight">{leastAffected.name}</p>
             </div>
-            <p className="text-green-400 font-bold text-lg">{leastAffected.piv.toFixed(1)} PIV</p>
+            <p className="text-green-400 font-black text-lg">{leastAffected.piv.toFixed(1)}</p>
           </div>
         )}
         {worstRef && (
-          <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4 space-y-1">
-            <p className="text-xs text-orange-400 font-semibold uppercase tracking-wide">En Kötü Hakem</p>
+          <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4 space-y-1">
+            <p className="text-[11px] text-orange-400 font-semibold uppercase tracking-wide">En Kötü Hakem</p>
             <p className="text-white font-bold text-sm mt-2 leading-tight">{worstRef.name}</p>
-            <p className="text-orange-400 text-sm">{worstRef.count} hatalı karar</p>
+            <p className="text-orange-400 text-sm font-semibold">{worstRef.count} hatalı karar</p>
           </div>
         )}
         {bestRef && bestRef.name !== worstRef?.name && (
-          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 space-y-1">
-            <p className="text-xs text-blue-400 font-semibold uppercase tracking-wide">En İyi Hakem</p>
+          <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4 space-y-1">
+            <p className="text-[11px] text-blue-400 font-semibold uppercase tracking-wide">En İyi Hakem</p>
             <p className="text-white font-bold text-sm mt-2 leading-tight">{bestRef.name}</p>
-            <p className="text-blue-400 text-sm">{bestRef.count} karar</p>
+            <p className="text-blue-400 text-sm font-semibold">{bestRef.count} karar</p>
           </div>
         )}
       </div>
@@ -167,8 +193,8 @@ export default async function IncidentsPage({
 
       {/* Incident list */}
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-gray-800 p-12 text-center">
-          <p className="text-gray-500 text-sm">Bu filtre için olay bulunamadı.</p>
+        <div className="rounded-2xl border border-[#252a35] p-12 text-center">
+          <p className="text-[#6b7280] text-sm">Bu filtre için olay bulunamadı.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -179,36 +205,33 @@ export default async function IncidentsPage({
               <Link
                 key={inc.id}
                 href={`/incidents/${inc.id}`}
-                className="flex items-center gap-4 rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-3.5 hover:border-gray-600 hover:bg-gray-800/60 transition-all group"
+                className="flex items-center gap-4 rounded-2xl border border-[#252a35] bg-[#16191f] px-4 py-3.5 hover:border-[#3a4050] hover:bg-[#1a1f2a] transition-all group"
               >
-                {/* Team badge */}
                 <TeamBadge name={inc.teams?.name ?? "?"} />
 
-                {/* Main info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${typeColor(inc.type)}`}>
                       {TYPE_MAP[inc.type]?.label ?? inc.type}
                     </span>
                     {inc.matches?.matchday && (
-                      <span className="text-[11px] text-gray-600">H{inc.matches.matchday}</span>
+                      <span className="text-[11px] text-[#6b7280]/60">H{inc.matches.matchday}</span>
                     )}
                   </div>
-                  <p className="text-white text-sm font-medium truncate">
+                  <p className="text-white text-sm font-semibold truncate">
                     {inc.matches
                       ? `${inc.matches.home?.name} - ${inc.matches.away?.name}`
                       : inc.teams?.name ?? "—"}
                   </p>
-                  <p className="text-gray-500 text-xs mt-0.5">
+                  <p className="text-[#6b7280] text-xs mt-0.5">
                     {inc.teams?.name} · {inc.minute}&apos;
                     {inc.referees ? ` · ${inc.referees.name}` : ""}
                   </p>
                 </div>
 
-                {/* PIV + status */}
                 <div className="shrink-0 text-right space-y-1">
-                  <p className={`text-sm font-black tabular-nums ${pivPositive ? "text-red-400" : "text-green-400"}`}>
-                    {pivPositive ? `+${piv.toFixed(1)}` : piv.toFixed(1)}
+                  <p className={`text-sm font-black tabular-nums ${pivPositive ? "text-red-400" : piv < 0 ? "text-green-400" : "text-[#6b7280]"}`}>
+                    {piv !== 0 ? (pivPositive ? `+${piv.toFixed(1)}` : piv.toFixed(1)) : "—"}
                   </p>
                   <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${
                     inc.status === "confirmed"
@@ -219,7 +242,7 @@ export default async function IncidentsPage({
                   </span>
                 </div>
 
-                <span className="text-gray-600 group-hover:text-gray-400 transition-colors text-sm">›</span>
+                <span className="text-[#6b7280] group-hover:text-white transition-colors text-base">›</span>
               </Link>
             );
           })}
@@ -234,7 +257,7 @@ function FeaturedCard({ inc, badge }: { inc: any; badge: string }) {
   return (
     <Link
       href={`/incidents/${inc.id}`}
-      className="block rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-transparent p-5 hover:border-orange-500/40 transition-colors space-y-2"
+      className="block rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/10 via-[#16191f] to-[#16191f] p-5 hover:border-orange-500/40 transition-all space-y-2"
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-orange-400">{badge}</span>
@@ -249,7 +272,7 @@ function FeaturedCard({ inc, badge }: { inc: any; badge: string }) {
         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${typeColor(inc.type)}`}>
           {TYPE_MAP[inc.type]?.label ?? inc.type}
         </span>
-        <span className="text-gray-400 text-xs">{inc.minute}&apos; · {inc.teams?.name}</span>
+        <span className="text-[#6b7280] text-xs">{inc.minute}&apos; · {inc.teams?.name}</span>
       </div>
     </Link>
   );

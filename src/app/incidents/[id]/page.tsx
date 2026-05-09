@@ -47,7 +47,6 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
 
   if (!inc) notFound();
 
-  // Detect if this visitor already voted (by hashed IP)
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0].trim() ?? hdrs.get("x-real-ip") ?? "unknown";
   const voterId = createHash("sha256").update(ip).digest("hex");
@@ -71,30 +70,39 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
   const rule   = IFAB_RULES[inc.type];
   const videoId = inc.video_url ? getYouTubeId(inc.video_url) : null;
 
-  const voteOpen   = !inc.vote_closes_at || new Date(inc.vote_closes_at) > new Date();
-  const myVote     = votes.find((v) => v.user_id === voterId)?.vote ?? null;
+  const voteOpen = !inc.vote_closes_at || new Date(inc.vote_closes_at) > new Date();
+  const myVote   = votes.find((v) => v.user_id === voterId)?.vote ?? null;
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-5">
 
       {/* Header */}
-      <div>
-        <p className="text-gray-500 text-sm mb-1">
+      <div className="rounded-2xl border border-[#252a35] bg-[#16191f] p-5">
+        <p className="text-[#6b7280] text-xs mb-1">
           {match ? `${match.home?.name} - ${match.away?.name}` : ""}
           {match?.matchday ? ` · Hafta ${match.matchday}` : ""}
         </p>
-        <h1 className="text-2xl font-bold text-white">
-          {TYPE_MAP[inc.type]?.label ?? inc.type} · {inc.minute}&apos;
+        <h1 className="text-xl font-black text-white">
+          {TYPE_MAP[inc.type]?.label ?? inc.type}
+          <span className="text-[#6b7280] font-normal"> · {inc.minute}&apos;</span>
         </h1>
         {inc.description && (
-          <p className="text-gray-300 text-sm mt-1 italic">&ldquo;{inc.description}&rdquo;</p>
+          <p className="text-[#6b7280] text-sm mt-1.5 leading-relaxed">&ldquo;{inc.description}&rdquo;</p>
         )}
-        <p className="text-gray-400 text-sm mt-1">
-          Etkilenen takım: <span className="text-white font-medium">{team?.name}</span>
-          {ref ? <> · Hakem: <span className="text-white font-medium">{ref.name}</span></> : ""}
-        </p>
+        <div className="flex flex-wrap gap-3 mt-3 text-sm">
+          {team && (
+            <span className="flex items-center gap-1.5 text-[#6b7280]">
+              Etkilenen: <span className="text-white font-semibold">{team.name}</span>
+            </span>
+          )}
+          {ref && (
+            <span className="flex items-center gap-1.5 text-[#6b7280]">
+              Hakem: <span className="text-white font-semibold">{ref.name}</span>
+            </span>
+          )}
+        </div>
         {(inc.is_worst_week || inc.is_worst_month) && (
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2 mt-3">
             {inc.is_worst_week  && <span className="text-xs px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/20 font-semibold">🏆 Haftanın En Kötü Kararı</span>}
             {inc.is_worst_month && <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20 font-semibold">📅 Ayın En Kötü Kararı</span>}
           </div>
@@ -103,7 +111,7 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
 
       {/* YouTube video */}
       {videoId && (
-        <div className="rounded-xl overflow-hidden border border-gray-800 aspect-video">
+        <div className="rounded-2xl overflow-hidden border border-[#252a35] aspect-video">
           <iframe
             src={`https://www.youtube.com/embed/${videoId}`}
             title="Olay videosu"
@@ -115,28 +123,28 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
       )}
 
       {/* PIV Breakdown */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-5 space-y-3">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">PIV Hesabı</h2>
+      <div className="rounded-2xl border border-[#252a35] bg-[#16191f] p-5 space-y-4">
+        <h2 className="text-xs font-semibold text-[#6b7280] uppercase tracking-wider">PIV Hesabı</h2>
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-xs text-gray-500">Ağırlık</p>
-            <p className="text-lg font-bold text-white">{inc.severity}</p>
+          <div className="rounded-xl bg-[#0e1015] border border-[#252a35] py-3">
+            <p className="text-[11px] text-[#6b7280] mb-1">Ağırlık</p>
+            <p className="text-xl font-black text-white">{inc.severity}</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Zaman Katsayısı</p>
-            <p className="text-lg font-bold text-white">×{inc.time_weight}</p>
+          <div className="rounded-xl bg-[#0e1015] border border-[#252a35] py-3">
+            <p className="text-[11px] text-[#6b7280] mb-1">Zaman</p>
+            <p className="text-xl font-black text-white">×{inc.time_weight}</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Oyun Durumu</p>
-            <p className="text-lg font-bold text-white">{inc.game_state > 0 ? `+${inc.game_state}` : inc.game_state}</p>
+          <div className="rounded-xl bg-[#0e1015] border border-[#252a35] py-3">
+            <p className="text-[11px] text-[#6b7280] mb-1">Oyun Durumu</p>
+            <p className="text-xl font-black text-white">{inc.game_state > 0 ? `+${inc.game_state}` : inc.game_state}</p>
           </div>
         </div>
-        <div className="border-t border-gray-800 pt-3 text-center">
-          <p className="text-xs text-gray-500">Toplam PIV</p>
-          <p className={`text-3xl font-black ${piv > 0 ? "text-green-400" : piv < 0 ? "text-red-400" : "text-gray-400"}`}>
+        <div className="border-t border-[#252a35] pt-4 text-center">
+          <p className="text-[11px] text-[#6b7280] uppercase tracking-wider mb-1">Toplam PIV</p>
+          <p className={`text-4xl font-black ${piv > 0 ? "text-red-400" : piv < 0 ? "text-green-400" : "text-[#6b7280]"}`}>
             {piv > 0 ? `+${piv.toFixed(2)}` : piv.toFixed(2)}
           </p>
-          <p className="text-xs text-gray-600 mt-1">
+          <p className="text-xs text-[#6b7280]/60 mt-1.5">
             {inc.status === "confirmed" ? "Onaylı — Adalet Tablosuna yansıdı" : "Taslak — Onay bekleniyor"}
           </p>
         </div>
@@ -144,19 +152,19 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
 
       {/* IFAB Official Rule */}
       {rule && (
-        <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-5 space-y-3">
+        <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5 space-y-3">
           <div>
-            <h2 className="text-sm font-semibold text-blue-400 uppercase tracking-wide">
+            <h2 className="text-xs font-semibold text-blue-400 uppercase tracking-wider">
               📖 {rule.title}
             </h2>
-            <p className="text-xs text-blue-400/60 mt-0.5">{rule.law}</p>
+            <p className="text-[11px] text-blue-400/50 mt-0.5">{rule.law}</p>
           </div>
-          <p className="text-sm text-gray-300 leading-relaxed">{rule.text}</p>
+          <p className="text-sm text-[#e8eaf0]/80 leading-relaxed">{rule.text}</p>
           <div>
-            <p className="text-xs text-gray-500 font-semibold uppercase mb-2">Kural ihlali sayılan durumlar:</p>
-            <ul className="space-y-1">
+            <p className="text-[11px] text-[#6b7280] font-semibold uppercase mb-2">Kural ihlali sayılan durumlar:</p>
+            <ul className="space-y-1.5">
               {rule.criteria.map((c, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-400">
+                <li key={i} className="flex items-start gap-2 text-sm text-[#6b7280]">
                   <span className="text-blue-400 mt-0.5 shrink-0">·</span>
                   {c}
                 </li>
@@ -167,88 +175,92 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
       )}
 
       {/* Panel Verdicts */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-5 space-y-3">
+      <div className="rounded-2xl border border-[#252a35] bg-[#16191f] p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
-            Hakem Paneli <span className="text-gray-600">(3 Uluslararası Emekli Hakem · %60)</span>
-          </h2>
-          <span className="text-xs text-gray-500">{panel.length}/3</span>
+          <div>
+            <h2 className="text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Hakem Paneli</h2>
+            <p className="text-[11px] text-[#6b7280]/50 mt-0.5">3 Uluslararası Emekli Hakem · %60 ağırlık</p>
+          </div>
+          <span className="text-xs font-bold text-[#6b7280] bg-[#252a35] px-2.5 py-1 rounded-full">{panel.length}/3</span>
         </div>
         {panel.length === 0 ? (
-          <p className="text-gray-600 text-sm">Henüz panel kararı girilmedi.</p>
+          <p className="text-[#6b7280] text-sm">Henüz panel kararı girilmedi.</p>
         ) : (
           <div className="space-y-2">
             {panel.map((v, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <p className="text-sm text-gray-300">{v.ref_name}</p>
-                <span className={`text-sm font-semibold ${VERDICT_COLOR[v.verdict]}`}>
+              <div key={i} className="flex items-center justify-between py-1">
+                <p className="text-sm text-[#e8eaf0]">{v.ref_name}</p>
+                <span className={`text-sm font-bold ${VERDICT_COLOR[v.verdict]}`}>
                   {VERDICT_LABEL[v.verdict]}
                 </span>
               </div>
             ))}
           </div>
         )}
-        <div className="border-t border-gray-800 pt-3 flex gap-6">
-          <div className="text-center">
-            <p className="text-green-400 font-bold text-lg">{panelCorrect}</p>
-            <p className="text-xs text-gray-500">Doğru</p>
+        <div className="border-t border-[#252a35] pt-4 grid grid-cols-3 gap-3">
+          <div className="text-center rounded-xl bg-[#0e1015] border border-[#252a35] py-2.5">
+            <p className="text-green-400 font-black text-xl">{panelCorrect}</p>
+            <p className="text-[11px] text-[#6b7280]">Doğru</p>
           </div>
-          <div className="text-center">
-            <p className="text-red-400 font-bold text-lg">{panelIncorrect}</p>
-            <p className="text-xs text-gray-500">Hatalı</p>
+          <div className="text-center rounded-xl bg-[#0e1015] border border-[#252a35] py-2.5">
+            <p className="text-red-400 font-black text-xl">{panelIncorrect}</p>
+            <p className="text-[11px] text-[#6b7280]">Hatalı</p>
           </div>
-          <div className="text-center">
-            <p className="text-yellow-400 font-bold text-lg">{panel.length - panelCorrect - panelIncorrect}</p>
-            <p className="text-xs text-gray-500">Belirsiz</p>
+          <div className="text-center rounded-xl bg-[#0e1015] border border-[#252a35] py-2.5">
+            <p className="text-yellow-400 font-black text-xl">{panel.length - panelCorrect - panelIncorrect}</p>
+            <p className="text-[11px] text-[#6b7280]">Belirsiz</p>
           </div>
         </div>
       </div>
 
       {/* Fan Vote */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
-          Taraftar Oylaması <span className="text-gray-600">(%40)</span>
-        </h2>
+      <div className="rounded-2xl border border-[#252a35] bg-[#16191f] p-5 space-y-4">
+        <div>
+          <h2 className="text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Taraftar Oylaması</h2>
+          <p className="text-[11px] text-[#6b7280]/50 mt-0.5">%40 ağırlık · IP başına 1 oy</p>
+        </div>
 
         {fanTotal > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-500 w-16">Doğru</span>
-              <div className="flex-1 bg-gray-800 rounded-full h-2">
+              <span className="text-xs text-[#6b7280] w-14">Doğru</span>
+              <div className="flex-1 bg-[#252a35] rounded-full h-2">
                 <div className="bg-green-500 h-2 rounded-full transition-all" style={{ width: `${(fanCorrect / fanTotal) * 100}%` }} />
               </div>
-              <span className="text-xs text-green-400 w-8 text-right">{fanCorrect}</span>
+              <span className="text-xs text-green-400 font-bold w-8 text-right">{fanCorrect}</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-500 w-16">Hatalı</span>
-              <div className="flex-1 bg-gray-800 rounded-full h-2">
+              <span className="text-xs text-[#6b7280] w-14">Hatalı</span>
+              <div className="flex-1 bg-[#252a35] rounded-full h-2">
                 <div className="bg-red-500 h-2 rounded-full transition-all" style={{ width: `${(fanIncorrect / fanTotal) * 100}%` }} />
               </div>
-              <span className="text-xs text-red-400 w-8 text-right">{fanIncorrect}</span>
+              <span className="text-xs text-red-400 font-bold w-8 text-right">{fanIncorrect}</span>
             </div>
+            <p className="text-[11px] text-[#6b7280]/60 text-right">{fanTotal} toplam oy</p>
           </div>
         )}
 
         {!voteOpen ? (
-          <p className="text-xs text-gray-600">Oylama kapandı · {fanTotal} oy</p>
+          <p className="text-xs text-[#6b7280]">Oylama kapandı · {fanTotal} oy</p>
         ) : myVote ? (
-          <div className="border-t border-gray-800 pt-4">
-            <p className="text-xs text-gray-500">
-              Oyunuz: <span className={`font-bold ${myVote === "correct" ? "text-green-400" : "text-red-400"}`}>
+          <div className="border-t border-[#252a35] pt-4">
+            <p className="text-sm text-[#6b7280]">
+              Oyunuz:{" "}
+              <span className={`font-bold ${myVote === "correct" ? "text-green-400" : "text-red-400"}`}>
                 {myVote === "correct" ? "✓ Doğru Karar" : "✗ Hatalı Karar"}
               </span>
             </p>
-            <p className="text-xs text-gray-600 mt-1">Oy kullandınız — değiştirilemez · {fanTotal} toplam oy</p>
+            <p className="text-xs text-[#6b7280]/60 mt-1">Oy kullandınız — değiştirilemez</p>
           </div>
         ) : (
-          <div className="border-t border-gray-800 pt-4 space-y-3">
-            <p className="text-xs text-gray-500">Bu karar doğru muydu? (1 oy hakkınız var)</p>
+          <div className="border-t border-[#252a35] pt-4 space-y-3">
+            <p className="text-sm text-[#6b7280]">Bu karar doğru muydu?</p>
             <div className="flex gap-2">
               <form action={castVoteAction}>
                 <input type="hidden" name="incident_id" value={inc.id} />
                 <input type="hidden" name="vote" value="correct" />
                 <button type="submit"
-                  className="px-4 py-2 bg-green-600/20 hover:bg-green-600/40 text-green-400 text-sm font-semibold rounded-lg border border-green-500/20 transition-colors">
+                  className="px-5 py-2.5 bg-green-500/10 hover:bg-green-500/25 text-green-400 text-sm font-bold rounded-xl border border-green-500/20 transition-colors">
                   ✓ Doğru Karar
                 </button>
               </form>
@@ -256,12 +268,11 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
                 <input type="hidden" name="incident_id" value={inc.id} />
                 <input type="hidden" name="vote" value="incorrect" />
                 <button type="submit"
-                  className="px-4 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 text-sm font-semibold rounded-lg border border-red-500/20 transition-colors">
+                  className="px-5 py-2.5 bg-red-500/10 hover:bg-red-500/25 text-red-400 text-sm font-bold rounded-xl border border-red-500/20 transition-colors">
                   ✗ Hatalı Karar
                 </button>
               </form>
             </div>
-            <p className="text-xs text-gray-600">Toplam {fanTotal} oy</p>
           </div>
         )}
       </div>

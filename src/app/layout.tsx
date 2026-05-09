@@ -10,14 +10,10 @@ export const metadata: Metadata = {
   description: "Türk futbolundaki hakem hatalarının puan etkisini takip ediyoruz.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr" className={`${geist.className} dark`}>
-      <body className="min-h-screen bg-gray-950 text-gray-100 antialiased">
+      <body className="min-h-screen bg-[#0e1015] text-[#e8eaf0] antialiased">
         <Navbar />
         <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
       </body>

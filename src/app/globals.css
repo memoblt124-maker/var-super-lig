@@ -24,3 +24,43 @@ body {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #252a35; border-radius: 99px; }
+
+/* shadcn / Tailwind v4 design tokens */
+@theme {
+  --color-background:           #0e1015;
+  --color-foreground:           #e8eaf0;
+  --color-primary:              #e53e3e;
+  --color-primary-foreground:   #ffffff;
+  --color-secondary:            #16191f;
+  --color-secondary-foreground: #e8eaf0;
+  --color-muted:                #16191f;
+  --color-muted-foreground:     #6b7280;
+  --color-accent:               #1a1f2a;
+  --color-accent-foreground:    #e8eaf0;
+  --color-destructive:          #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border:               #252a35;
+  --color-input:                #252a35;
+  --color-ring:                 #e53e3e;
+  --color-card:                 #16191f;
+  --color-card-foreground:      #e8eaf0;
+}
+
+/* bg-grid-white utility for decorative grid pattern */
+@layer utilities {
+  .bg-grid-white {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px);
+  }
+}
+
+/* Spotlight animation */
+@keyframes spotlight {
+  0%   { opacity: 0; transform: translate(-72%, -62%) scale(0.5); }
+  100% { opacity: 1; transform: translate(-50%, -40%) scale(1); }
+}
+
+.animate-spotlight {
+  animation: spotlight 2s ease 0.75s 1 forwards;
+}
