@@ -3,8 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { IFAB_RULES } from "@/lib/ifab-rules";
 import { TYPE_MAP } from "@/lib/incident-types";
-import { signOutAction, castVoteAction } from "../actions";
-import GoogleSignIn from "@/components/GoogleSignIn";
+import { castVoteAction } from "../actions";
 
 const VERDICT_COLOR: Record<string, string> = {
   correct:      "text-green-400",
@@ -28,27 +27,21 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const supabase = await createClient();
 
-  const [incResult, authResult] = await Promise.all([
-    supabase
-      .from("incidents")
-      .select(`
-        *,
-        teams!team_affected_id ( name ),
-        referees ( name ),
-        matches ( matchday, kickoff_at,
-          home:teams!home_team_id ( name ),
-          away:teams!away_team_id ( name )
-        ),
-        panel_verdicts ( ref_name, verdict, created_at ),
-        fan_votes ( vote, user_id )
-      `)
-      .eq("id", id)
-      .single(),
-    supabase.auth.getUser(),
-  ]);
-
-  const inc  = incResult.data;
-  const user = authResult.data?.user ?? null;
+  const { data: inc } = await supabase
+    .from("incidents")
+    .select(`
+      *,
+      teams!team_affected_id ( name ),
+      referees ( name ),
+      matches ( matchday, kickoff_at,
+        home:teams!home_team_id ( name ),
+        away:teams!away_team_id ( name )
+      ),
+      panel_verdicts ( ref_name, verdict, created_at ),
+      fan_votes ( vote, user_id )
+    `)
+    .eq("id", id)
+    .single();
 
   if (!inc) notFound();
 
@@ -71,7 +64,6 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
   const rule   = IFAB_RULES[inc.type];
   const videoId = inc.video_url ? getYouTubeId(inc.video_url) : null;
 
-  const userVote = user ? (votes.find((v) => v.user_id === user.id)?.vote ?? null) : null;
   const voteOpen = !inc.vote_closes_at || new Date(inc.vote_closes_at) > new Date();
 
   return (
@@ -206,21 +198,10 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
 
       {/* Fan Vote */}
       <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
-            Taraftar Oylaması <span className="text-gray-600">(%40)</span>
-          </h2>
-          {user && (
-            <form action={signOutAction}>
-              <input type="hidden" name="incident_id" value={inc.id} />
-              <button type="submit" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
-                Çıkış ({user.user_metadata?.name ?? user.email})
-              </button>
-            </form>
-          )}
-        </div>
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+          Taraftar Oylaması <span className="text-gray-600">(%40)</span>
+        </h2>
 
-        {/* Vote tally — always visible */}
         {fanTotal > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -240,41 +221,8 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
           </div>
         )}
 
-        {/* Vote action area */}
         {!voteOpen ? (
           <p className="text-xs text-gray-600">Oylama kapandı · {fanTotal} oy</p>
-        ) : !user ? (
-          <div className="border-t border-gray-800 pt-4 space-y-2">
-            <p className="text-xs text-gray-500">Oy kullanmak için Google ile giriş yap:</p>
-            <GoogleSignIn incidentId={inc.id} />
-          </div>
-        ) : userVote ? (
-          <div className="border-t border-gray-800 pt-4 space-y-3">
-            <p className="text-xs text-gray-500">
-              Oyunuz: <span className={`font-semibold ${userVote === "correct" ? "text-green-400" : "text-red-400"}`}>
-                {userVote === "correct" ? "Doğru Karar" : "Hatalı Karar"}
-              </span>
-            </p>
-            <div className="flex gap-2">
-              <form action={castVoteAction}>
-                <input type="hidden" name="incident_id" value={inc.id} />
-                <input type="hidden" name="vote" value="correct" />
-                <button type="submit"
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${userVote === "correct" ? "bg-green-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>
-                  ✓ Doğru Karar
-                </button>
-              </form>
-              <form action={castVoteAction}>
-                <input type="hidden" name="incident_id" value={inc.id} />
-                <input type="hidden" name="vote" value="incorrect" />
-                <button type="submit"
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${userVote === "incorrect" ? "bg-red-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>
-                  ✗ Hatalı Karar
-                </button>
-              </form>
-            </div>
-            <p className="text-xs text-gray-600">Toplam {fanTotal} oy · Oyunuzu değiştirebilirsiniz</p>
-          </div>
         ) : (
           <div className="border-t border-gray-800 pt-4 space-y-3">
             <p className="text-xs text-gray-500">Bu karar doğru muydu?</p>
